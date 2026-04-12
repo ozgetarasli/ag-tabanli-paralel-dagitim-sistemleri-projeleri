@@ -1,6 +1,6 @@
 -- SQL Server Agent kullanılarak zamanlanmış görev (Job) oluşturma örneği.
--- Uyarı: Bu script'in başarıyla çalışması için SQL Server Agent hizmetinin çalışıyor olması gerekmektedir.
--- SQL Server Express sürümünde Agent bulunmaz.
+--Bu script'in başarıyla çalışması için SQL Server Agent hizmetinin çalışıyor olması gerekmektedir.
+
 
 USE msdb;
 GO
@@ -12,7 +12,7 @@ EXEC dbo.sp_add_job
     @description = N'Northwind veritabanı için günlük otomatik tam yedekleme görevi.';
 GO
 
--- 2. Job için adım (step) ekleme (Çalıştırılacak SQL Komutu)
+-- 2. Job için adım (step) ekleme
 EXEC sp_add_jobstep 
     @job_name = N'Northwind_Daily_Full_Backup', 
     @step_name = N'Execute Full Backup', 

@@ -78,7 +78,7 @@ Son tam yedeklemeden (Full Backup) bu yana değişen verileri yakalar. Tam yede�
 
 ```sql
 BACKUP DATABASE Northwind 
-TO DISK = 'C:\Backups\Northwind_Diff.bak'
+TO DISK = 'C:\SQLBackups\Northwind_Diff.bak'
 WITH DIFFERENTIAL,
 NAME = 'Differential Backup of Northwind';
 GO
@@ -112,16 +112,16 @@ tüm yedeklemelerin yapıldığını gösteren sql sorgusu:
 
 ```sql
 SELECT TOP 10
-bs.database_name AS veritabaniAdi, 
-bs.backup_start_date AS yedekBaslangic, 
-bs.backup_finish_date AS yedekBitis, 
-bs.type AS yedekTipi, 
-bs.backup_size AS yedekBoyutuMB,
-bmf.physical_device_name AS yedekDosyaYolu, 
+    bs.database_name AS veritabaniAdi, 
+    bs.backup_start_date AS yedekBaslangic, 
+    bs.backup_finish_date AS yedekBitis, 
+    bs.type AS yedekTipi, 
+    bs.backup_size AS yedekBoyutuMB,
+    bmf.physical_device_name AS yedekDosyaYolu
 FROM msdb.dbo.backupset bs
 INNER JOIN msdb.dbo.backupmediafamily bmf
    ON bs.media_set_id = bmf.media_set_id
-WHERE bs.database_name = 'Northwind';
+WHERE bs.database_name = 'Northwind'
 ORDER BY bs.backup_finish_date DESC;
 
 ![Tüm yedeklemelerin yapıldığını gösteren sql sorgusu](images/5.jpeg)
@@ -153,7 +153,7 @@ EXEC sp_add_jobstep
     @job_name = N'Northwind_Daily_Full_Backup', 
     @step_name = N'Execute Full Backup', 
     @subsystem = N'TSQL', 
-    @command = N'BACKUP DATABASE Northwind TO DISK = ''C:\Backups\Northwind_Daily.bak'' WITH INIT', 
+    @command = N'BACKUP DATABASE Northwind TO DISK = ''C:\SQLBackups\Northwind_Daily.bak'' WITH INIT', 
     @retry_attempts = 3, 
     @retry_interval = 5;
 GO
@@ -272,15 +272,19 @@ WITH NORECOVERY;
 
 Veritabanı geri yükleme işlemi restore zinciri mantığına uygun şekilde gerçekleştirilmiştir. İlk olarak tam yedek geri yüklenmiş ve veritabanı NORECOVERY modunda bırakılmıştır. Ardından transaction log yedeği kullanılarak veritabanı, veri kaybı yaşanmadan önceki zamana geri getirilmiştir.
 
-STOPAT parametresi kullanılarak veritabanı belirli bir zamana kadar geri alınmış ve RECOVERY ile aktif hale getirilmiştir.
-
 ```sql
+-- 1. Tam Yedeği NORECOVERY ile geri yükleme
+RESTORE DATABASE Northwind 
+FROM DISK = 'C:\SQLBackups\Northwind_Full.bak' 
+WITH NORECOVERY, REPLACE;
+GO
 
+-- 2. Log yedeğini belirli bir zamana (STOPAT) kadar geri yükleme
 RESTORE LOG Northwind 
 FROM DISK = 'C:\SQLBackups\Northwind_Tail_Log.trn'
 WITH STOPAT = '2026-04-09 20:53:17',
 RECOVERY;
-
+GO
 ```
 
 
