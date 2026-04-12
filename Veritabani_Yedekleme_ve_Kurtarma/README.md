@@ -95,9 +95,10 @@ d.state_desc AS Status,
 d.recovery_model_desc AS RecoveryModel
 FROM sys.databases d
 WHERE d.name = 'Northwind';
-
+```
 ![Full recovery modelde çalışmış olduğumuzu gösterdik.](images/4.jpeg)
 
+```sql
 
 BACKUP LOG Northwind 
 TO DISK = 'C:\SQLBackups\Northwind_Log.trn'
@@ -186,35 +187,107 @@ GO
 
 İlgili `.sql` dosyası: `03_Disaster_Recovery_Scenario.sql`
 
-Test aşamasında, kaza ile verilerin silindiği anı simüle eden gerçek bir felaket senaryosu kurulmuştur:
 
-1. Tabloya veriler eklenir ve Tam Yedek anı `C:\SQLBackups` altına alınır.
+ilk olarak test tablosu oluşturuyoruz. Felaket kurtarma senaryosunu test edebilmek amacıyla `Table_RecoveryTest` adında bir test tablosu oluşturduk. Bu tablo, veri ekleme ve silme işlemlerini simüle ederek geri yükleme sürecinin doğruluğunu test etmek için kullanılacaktır.
+
 ```sql
-INSERT INTO Table_RecoveryTest (Data) VALUES ('Onemli Müsteri Verisi 1'), ('Onemli Siparis Verisi 2');
+
+CREATE TABLE Table_RecoveryTest (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Data NVARCHAR(100),
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+
 ```
-![Tabloya veri ekleme](images/7.jpeg)
 
-2. Zaman not edilir (Verilerin henüz silinmediği, sağlam olduğu an).
-3. Tablodaki veriler bilinçli olarak `DELETE` komutu kullanılarak yanlışlıkla silinmiş gibi yok edilir.
+
+![Tablonun oluştuğunu gösteren ekran resmi](images/12.png)
+
+
+Test senaryosu kapsamında ikinci olarak tablomuza verileri ekliyoruz. Bu veriler, felaket sonrası geri yükleme işleminin doğruluğunu test etmek amacıyla kullanılacaktır.
+
 ```sql
-DELETE FROM Table_RecoveryTest WHERE Data = 'Onemli Müsteri Verisi 1';
+
+INSERT INTO Table_RecoveryTest (Data) 
+VALUES 
+('Onemli Musteri Verisi 1'),
+('Onemli Siparis Verisi 2'),
+('Kritik Finans Verisi');
+
+
 ```
-![Tablodan veri silme](images/8.jpeg)
+![Tabloya veri ekleme](images/13.png)
 
-4. **Geri Getirme Aşaması:** DB `NORECOVERY` modunda yedeklenip (Tail Log Backup) kapatılarak son yedek geri yüklenir.
-5. "Tail Log Backup", verilerin kaza ile silinmeden önceki not edilen tam zamana (**Point-in-Time**) kadar işlenerek restorasyon işlemi başarıyla sonuçlandırılır:
+
+
+Verilerin güvenli bir noktası oluşturmak amacıyla veritabanının tam yedeği(full backup) alınmıştır. Bu yedek, felaket sonrası geri dönüş için temel referans noktası olarak kullanılacaktır.
 
 ```sql
+
+BACKUP DATABASE Northwind 
+TO DISK = 'C:\SQLBackups\Northwind_Full.bak'
+WITH INIT, NAME = 'Full Backup Before Disaster';
+
+```
+
+![Tam yedeğin alındığını gösteren ekran resmi](images/14.png)
+
+
+
+Verilerin henüz silinmediği anın zaman bilgisi kaydedilmiştir. Bu zaman bilgisi, point-in-time restore işlemi sırasında kullanılacaktır.
+
+```sql
+
+SELECT GETDATE() AS CurrentTime;
+
+```
+![Zamanın kaydedildiğini gösteren ekran resmi](images/15.png)
+
+Felaket senaryosu kapsamında, kritik verilerden biri yanlışlıkla silinmiş gibi simüle edilmiştir. Bu işlem, gerçek hayatta kullanıcı hatası sonucu oluşabilecek veri kaybını temsil etmektedir.
+ 
+```sql
+
+DELETE FROM Table_RecoveryTest
+WHERE Data = 'Onemli Musteri Verisi 1';
+
+```
+![Tablodan veri silme](images/16.png)
+
+
+
+Veri kaybını minimuma indirmek amacıyla Tail-Log Backup alınmıştır. Bu işlem, veritabanının kapanmadan önceki son transaction kayıtlarını koruyarak geri yükleme zincirine dahil edilmesini sağlar.
+
+ 
+```sql
+
+BACKUP LOG Northwind
+TO DISK = 'C:\SQLBackups\Northwind_Tail_Log.trn'
+WITH NORECOVERY;
+
+```
+![Tail-Log Backup](images/17.png)
+
+
+
+Veritabanı geri yükleme işlemi restore zinciri mantığına uygun şekilde gerçekleştirilmiştir. İlk olarak tam yedek geri yüklenmiş ve veritabanı NORECOVERY modunda bırakılmıştır. Ardından transaction log yedeği kullanılarak veritabanı, veri kaybı yaşanmadan önceki zamana geri getirilmiştir.
+
+STOPAT parametresi kullanılarak veritabanı belirli bir zamana kadar geri alınmış ve RECOVERY ile aktif hale getirilmiştir.
+
+```sql
+
 RESTORE LOG Northwind 
-FROM DISK = 'C:\SQLBackups\Northwind_Tail_Log.trn' 
-WITH STOPAT = '2026-04-08 10:25:00', RECOVERY;
-GO
+FROM DISK = 'C:\SQLBackups\Northwind_Tail_Log.trn'
+WITH STOPAT = '2026-04-09 20:53:17',
+RECOVERY;
+
 ```
-![Tablodan veri geri getirme](images/9.jpeg)
 
-Bu teknik ile kaybolan veriler hatasız biçimde geri getirilmiştir.
 
----
+![Veritabanı geri yükleme](images/18.png)
+
+Geri yükleme işlemi tamamlandıktan sonra yapılan kontrollerde silinen verinin başarıyla geri getirildiği gözlemlenmiştir. Bu durum, point-in-time restore işleminin doğru şekilde çalıştığını göstermektedir.
+
 
 ## 5. Yedeklerin Test Edilmesi
 
@@ -223,12 +296,14 @@ Bu teknik ile kaybolan veriler hatasız biçimde geri getirilmiştir.
 Alınan yedeklerin güvenilirliği ve sağlamlığı kriz anından önce periyodik olarak test edilmelidir.
 *   **RESTORE VERIFYONLY:** Veritabanına fiziksel veya mantıksal bir zarar gelip gelmediğini, dosyaların sağlamlığını verileri geri yüklemeden test eder.
 ```sql
+
 RESTORE VERIFYONLY FROM DISK = 'C:\SQLBackups\Northwind_Full.bak';
 ```
 ![Yedeklerin doğruluğunu test etme](images/10.jpeg)
 
 *   **Side-by-side Restore (Yan Yana Geri Yükleme):** Üretim ortamını tehlikeye atmadan yedeğin işlevselliğini %100 kanıtlamak adına yedek dosyasından (`.bak`) geçici bir test veritabanı kurulur ve çalıştırılır.
 ```sql
+
 RESTORE DATABASE Northwind_TestRestore 
 FROM DISK = 'C:\SQLBackups\Northwind_Full.bak'
 WITH 
