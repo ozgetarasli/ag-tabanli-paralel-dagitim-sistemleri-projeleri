@@ -200,7 +200,7 @@ UPDATE Orders_Staging
 SET OrderDate = '2099-01-01'
 WHERE OrderID = 10248;
 ```
-![Hata Ekleme Simülasyonu](images/proje5_images15.jpeg)
+![Hata Ekleme Simülasyonu](images/proje5_images14.jpeg)
 
 5.1. Mantıksız verileri bulma: Hata eklendikten sonra gelecek tarihli kayıtlar sorgulanarak hatalı kaydın göründüğü doğrulanır.
 ```sql
@@ -208,7 +208,7 @@ SELECT *
 FROM Orders_Staging
 WHERE OrderDate > GETDATE();
 ```
-![Hata Sonrası Durum](images/proje5_images16.jpeg)
+![Hata Sonrası Durum](images/proje5_images15.jpeg)
 
 5.2. Mantıksız verileri düzeltme:
 ```sql
@@ -216,7 +216,7 @@ UPDATE Orders_Staging
 SET OrderDate = GETDATE()
 WHERE OrderDate > GETDATE();
 ```
-![Tarih Düzeltme İşlemi](images/proje5_images17.jpeg)
+![Tarih Düzeltme İşlemi](images/proje5_images16.jpeg)
 
 5.3. Doğrulama: Düzeltme sonrasında sorgu boş küme döndürür; bu işlemin başarıyla tamamlandığını gösterir.
 ```sql
@@ -224,7 +224,7 @@ SELECT *
 FROM Orders_Staging
 WHERE OrderDate > GETDATE();
 ```
-![Düzeltme Doğrulama](images/proje5_images14.jpeg)
+![Düzeltme Doğrulama](images/proje5_images17.jpeg)
 
 ### 2.4 Veri Dönüştürme ve Zenginleştirme
 Veriler temizlendikten sonra, analiz süreçlerini kolaylaştırmak ve daha anlamlı hale getirmek için dönüştürme (transform) ve zenginleştirme işlemleri uygulanmıştır (`4_Veri_dönüstürme.sql`).
@@ -311,30 +311,30 @@ SELECT * FROM Clean_Orders;
 ETL süreci tamamlandıktan sonra yapılan veri temizleme ve dönüştürme işlemlerinin başarısını ölçmek amacıyla çeşitli kalite kontrolleri ve raporlama sorguları çalıştırılmıştır (`6_Veri_raporu_kalitesi.sql`).
 
 **1. Eksik Veri ve Düzeltme İstatistikleri:**
-Daha önce 'Unknown' olarak güncellenen NULL değerlerin sayısı kontrol edilerek kaç adet düzeltme yapıldığı doğrulanmıştır.
+Transform aşamasında NULL olan şehir bilgileri 'Unknown' değeriyle güncellenmişti. Bu sorgu, kaç adet kaydın bu şekilde düzeltildiğini sayısal olarak doğrulamak amacıyla çalıştırılmıştır. Sonuç 1 olarak dönmüştür yani staging tablosuna enjekte edilen 1 adet eksik şehir verisi başarıyla doldurulmuştur. 
 ```sql
 SELECT COUNT(*) as EksikSehir FROM Customers_Staging WHERE City = 'Unknown';
 ```
-![Düzeltme İstatistikleri](images/proje5_images25.jpeg)
+![Eksik Veri İstatistikleri](images/proje5_images25.jpeg)
 
-**2. Mükerrer Kayıt Sonrası Tablo Durumu:**
-Temizleme işlemi sonrasında veri setindeki toplam kayıt sayısının 91 olduğu gözlemlenmiştir. Bu durum, duplicate temizleme işleminin başarılı olduğunu ve veri setinin tekilleştirildiğini kanıtlamaktadır.
+**2. Duplicate Kayıt Sonrası Tablo Durumu:**
+Duplicate temizleme işleminin ardından tablodaki toplam kayıt sayısı sorgulanmıştır. Sonuç 91 olarak dönmüştür. Northwind veritabanının orijinal `Customers` tablosu 91 kayıt içermektedir; bu değerle örtüşmesi, simüle edilen mükerrer kaydın (`AROUT`) başarıyla silindiğini ve tablonun özgün boyutuna döndüğünü kanıtlamaktadır.
 ```sql
 SELECT COUNT(*) FROM Customers_Staging;
 ```
-![Kayıt Sayısı Kontrolü](images/proje5_images26.jpeg)
+![Tekilleştirme Sonrası Durum](images/proje5_images26.jpeg)
 
 **3. Ülke Dağılımı ve Standartlaştırma Analizi:**
-Yapılan büyük harf standartlaştırması (turkey → TURKEY) sayesinde, ülke bazlı müşteri sayımları artık tutarlı ve doğru sonuçlar vermektedir.
+Ülke bazlı müşteri dağılımı sorgulanmıştır. Sonuç kümesinde tüm ülke isimlerinin büyük harf formatında  listelendiği görülmüştür. Özellikle 'turkiye' olarak bozulan değerin 'TURKEY' formatına dönüştürüldüğü doğrulanmıştır. Standartlaştırma yapılmadan bırakılsaydı, aynı ülke farklı yazım biçimleriyle birden fazla satırda görünecek ve ülke bazlı analizlerde hatalı sonuçlar üretilecekti.
 ```sql
 SELECT Country, COUNT(*) as sayi
 FROM Customers_Staging
 GROUP BY Country;
 ```
-![Ülke Bazlı Dağılım](images/proje5_images27.jpeg)
+![Ülke Dağılım Analizi](images/proje5_images27.jpeg)
 
 **4. Kargo Ücretleri (Freight) Dağılım Analizi:**
-Dönüştürme aşamasında oluşturulan Freight kategorileri kullanılarak, siparişlerin maliyet dağılımı analiz edilmiştir. Bu sayede düşük, orta ve yüksek maliyetli siparişlerin sayısal oranları belirlenmiştir.
+Transform aşamasında oluşturulan FreightCategory mantığı kullanılarak tüm sipariş kayıtlarının maliyet kategorilerine göre dağılımı raporlanmıştır. Sonuçlara göre 470 sipariş LOW (Freight < 50), 173 sipariş MEDIUM (50 ≤ Freight ≤ 100) ve 187 sipariş HIGH (Freight > 100) kategorisinde yer almaktadır. Toplam 830 sipariş kaydının yaklaşık %57'sinin düşük kargo maliyetli olduğu görülmektedir. Bu dağılım, lojistik maliyet optimizasyonu açısından değerlendirilebilecek anlamlı bir örüntüye işaret etmektedir.
 ```sql
 SELECT 
     CASE 
@@ -356,12 +356,14 @@ GROUP BY
 ---
 
 ## 3. Sonuç
-Bu çalışma kapsamında, Northwind veritabanı üzerinde uçtan uca bir **ETL (Extract, Transform, Load)** süreci başarıyla tasarlanmış ve uygulanmıştır.
+Bu çalışma kapsamında, Northwind veritabanı üzerinde uçtan uca bir **ETL (Extract, Transform, Load)** süreci başarıyla tasarlanmış ve uygulanmıştır. Proje, yalnızca teknik bir veri işleme alıştırması olmanın ötesinde; gerçek dünya veri kalitesi sorunlarının nasıl tespit edilip sistematik biçimde giderileceğini de somut örneklerle ortaya koymaktadır.
 
-- **Extract:** Ham veriler güvenli bir staging alanına taşınmıştır.
-- **Transform:** Veri kalitesi sorunları (NULL, duplicate, yazım hataları, mantıksız tarihler) giderilmiş; veriler yeni sütunlar ve kategoriler ile zenginleştirilmiştir.
-- **Load:** İşlenmiş veriler analiz edilmeye hazır, temiz bir yapı (`Clean_Orders`) içerisinde nihai tabloya yüklenmiştir.
+**Extract** aşamasında ham veriler, orijinal tablolara hiçbir müdahale yapılmadan staging alanına taşınmıştır. Bu yaklaşım, olası hatalar durumunda geri dönüş imkânı sağladığı için üretim ortamlarında da benimsenen temel bir veri mühendisliği pratiğidir.
 
-Temizleme süreci sonucunda elde edilen sayısal bulgular şu şekilde özetlenebilir: `Customers_Staging` tablosunda 1 adet NULL şehir değeri "Unknown" olarak düzeltilmiş, 1 adet mükerrer kayıt silinmiş ve toplam kayıt sayısı 91'e indirgenmiştir. Ülke standartlaştırması kapsamında tüm kayıtlar büyük harf formatına dönüştürülmüştür. `Orders_Staging` tablosunda ise 1 adet gelecek tarihli (2099) hatalı sipariş kaydı güncel tarihle güncellenmiştir.
+**Transform** aşamasında beş farklı veri kalitesi sorunu ele alınmıştır: NULL değerler anlamlı bir varsayılan değerle doldurulmuş, mükerrer kayıtlar `ROW_NUMBER()` pencere fonksiyonu kullanılarak tekilleştirilmiş, şirket isimlerindeki baş/son boşluklar `LTRIM`/`RTRIM` ile temizlenmiş, ülke isimleri `UPPER()` fonksiyonuyla standart formata dönüştürülmüş ve mantıksız gelecek tarihli sipariş kayıtları düzeltilmiştir. Bu adımların her biri, hem uygulama öncesi hem de sonrasında doğrulama sorguları ile teyit edilmiştir. Ek olarak veriler, `OrderYear` türetilmiş sütunu ve `FreightCategory` kategorizasyonuyla analitik açıdan zenginleştirilmiştir.
 
-Sonuç olarak, kirli ve ham veriden yola çıkılarak analiz süreçlerine doğrudan girdi sağlayabilecek yüksek kaliteli bir veri seti elde edilmiştir.
+**Load** aşamasında ise tüm dönüşümler tek bir sorgu içinde birleştirilerek `Clean_Orders` adlı nihai tabloya yüklenmiştir. Bu tablo; sipariş kimliği, şirket adı, ülke, sipariş tarihi, sipariş yılı, kargo ücreti ve kargo kategorisi alanlarını bir arada sunmakta ve analitik sorgulamaya doğrudan hazır bir yapı sunmaktadır.
+
+Kalite kontrol raporlaması sonucunda elde edilen sayısal bulgular şu şekilde özetlenebilir: 1 adet NULL şehir verisi düzeltilmiş, 1 adet mükerrer kayıt silinmiş, tüm 91 müşteri kaydı standart büyük harf formatına getirilmiş ve 1 adet mantıksız tarih verisi giderilmiştir. Sipariş verileri incelendiğinde toplam 830 kaydın 470'inin (%57) düşük, 173'ünün (%21) orta ve 187'sinin (%22) yüksek kargo maliyeti kategorisinde yer aldığı görülmektedir.
+
+Sonuç olarak, ham ve kirli veriden yola çıkılarak analiz süreçlerine doğrudan girdi sağlayabilecek, tutarlı, tekilleştirilmiş ve zenginleştirilmiş bir veri seti başarıyla üretilmiştir.
