@@ -31,7 +31,7 @@ Bu proje, modern veri ambarı mimarilerinde kritik bir rol oynayan **ETL (Extrac
 - **Örnek Veri Seti:** Northwind Database
 
 ### 1.2 Veri Tabanı ve Senaryo
-Projede **Northwind** veritabanı üzerinden `Customers` ve `Orders` tabloları temel alınmıştır. Gerçek dünya senaryolarında üretim veritabanından alınan verilerin temizlenip analiz edilmek üzere bir veri ambarına aktarılması simüle edilmiştir.
+Projede **Northwind** veritabanı üzerinden `Customers` ve `Orders` tabloları temel alınmıştır. Gerçek dünya senaryolarında üretim veritabanından alınan verilerin temizlenip analiz edilmek üzere bir veri ambarına aktarılması simüle edilmiştir. Proje kapsamında tek bir kaynak veritabanı kullanılmış; çok kaynaklı entegrasyon senaryosu bu tek kaynak üzerinden simüle edilmiştir.
 
 ### 1.3 Amaç ve Planlama
 Projenin temel amacı, ham veriyi alıp belirli kurallara göre temizleyerek tutarlı bir hale getirmektir:
@@ -193,7 +193,9 @@ proje5_images13.jpeg
 
 **5. Mantıksız Veri Kontrolü:** Gelecekteki sipariş tarihlerinin düzeltilmesi.
 
-5.1. Mantıksız verileri bulma: Gelecek tarihli hatalı veriler kontrol edilir. Test için manuel olarak hatalı veri girişi yapılmıştır.
+5.0. Hata Simülasyonu: Temizleme mantığını test etmek amacıyla önce mevcut veri kontrol edilmiş, ardından kasıtlı olarak hatalı bir tarih değeri eklenmiştir.
+
+İlk kontrol (temizleme öncesi, beklenen sonuç: boş küme):
 ```sql
 SELECT *
 FROM Orders_Staging
@@ -201,7 +203,7 @@ WHERE OrderDate > GETDATE();
 ```
 proje5_images14.jpeg
 
-Hata Ekleme Simülasyonu:
+Hata ekleme:
 ```sql
 UPDATE Orders_Staging
 SET OrderDate = '2099-01-01'
@@ -209,7 +211,7 @@ WHERE OrderID = 10248;
 ```
 proje5_images15.jpeg
 
-Tekrar Kontrol:
+Hata sonrası kontrol (hatalı kaydın göründüğü doğrulanır):
 ```sql
 SELECT *
 FROM Orders_Staging
@@ -217,7 +219,7 @@ WHERE OrderDate > GETDATE();
 ```
 proje5_images16.jpeg
 
-5.2. Mantıksız verileri düzeltme:
+5.1. Mantıksız verileri düzeltme:
 ```sql
 UPDATE Orders_Staging
 SET OrderDate = GETDATE()
@@ -225,18 +227,18 @@ WHERE OrderDate > GETDATE();
 ```
 proje5_images17.jpeg
 
-5.3. Doğrulama:
+5.2. Doğrulama:
 ```sql
 SELECT *
 FROM Orders_Staging
 WHERE OrderDate > GETDATE();
 ```
 
-## 2.4 Veri Dönüştürme ve Zenginleştirme
-Veriler temizlendikten sonra, analiz süreçlerini kolaylaştırmak ve daha anlamlı hale getirmek için dönüştürme (transfrom) ve zenginleştirme işlemleri uygulanmıştır (`4_Veri_dönüstürme.sql`).
+### 2.4 Veri Dönüştürme ve Zenginleştirme
+Veriler temizlendikten sonra, analiz süreçlerini kolaylaştırmak ve daha anlamlı hale getirmek için dönüştürme (transform) ve zenginleştirme işlemleri uygulanmıştır (`4_Veri_dönüstürme.sql`).
 
 **1. Yeni Alan Oluşturma (OrderYear):**
-Yıl bazlı analizleri hızlandırmak için sipariş tarihlerinden yıl bilgisi çıkarılarak yeni bir sütuna atanmıştır.
+Yıl bazlı analizleri hızlandırmak için sipariş tarihlerinden yıl bilgisi çıkarılarak yeni bir kalıcı sütuna atanmıştır.
 ```sql
 ALTER TABLE Orders_Staging ADD OrderYear INT;
 
@@ -246,7 +248,7 @@ Sorgu sonucunda `OrderDate` sütunundan türetilen `OrderYear` sütunu tabloya e
 
 proje5_images18.jpeg
 
-Kontrol etmek için aşağıdaki sorguyu çalıştırırız.Gelen Tabloda yeni oluşturulan sütunları görürüz.
+Kontrol etmek için aşağıdaki sorguyu çalıştırırız. Gelen tabloda yeni oluşturulan sütunları görürüz.
 
 ```sql
 SELECT OrderDate, OrderYear
@@ -256,7 +258,7 @@ FROM Orders_Staging;
 proje5_images19.jpeg
 
 **2. Veri Kategorizasyonu (FreightCategory):**
-Sayısal olan kargo ücretleri (`Freight`), 'LOW', 'MEDIUM' ve 'HIGH' olmak üzere kategorize edilerek verinin daha kolay yorumlanması sağlanmıştır.
+Sayısal olan kargo ücretleri (`Freight`), 'LOW', 'MEDIUM' ve 'HIGH' olmak üzere kategorize edilerek verinin daha kolay yorumlanması sağlanmıştır. Bu kategorizasyon analitik sorgularda kullanılmak üzere tasarlanmıştır; `Clean_Orders` nihai tablosuna yüklenirken de aynı `CASE` ifadesi uygulanmaktadır.
 ```sql
 SELECT OrderID, Freight,
        CASE 
@@ -290,16 +292,20 @@ SELECT
     c.Country,
     o.OrderDate,
     YEAR(o.OrderDate) as OrderYear,
-    o.Freight
+    o.Freight,
+    CASE 
+        WHEN o.Freight < 50 THEN 'LOW'
+        WHEN o.Freight BETWEEN 50 AND 100 THEN 'MEDIUM'
+        ELSE 'HIGH'
+    END as FreightCategory
 INTO Clean_Orders
 FROM Orders_Staging o
 JOIN Customers_Staging c
 ON o.CustomerID = c.CustomerID;
-
 ```
 proje5_images22.jpeg
 
-Yeni tablomuzun oluştuğunu görmek için hem sol taraftaki tablolardan bakabiliriz. 
+Yeni tablomuzun oluştuğunu görmek için sol taraftaki tablo listesinden de kontrol edebiliriz.
 
 proje5_images23.jpeg
 
@@ -327,7 +333,7 @@ SELECT COUNT(*) FROM Customers_Staging;
 proje5_images26.jpeg
 
 **3. Ülke Dağılımı ve Standartlaştırma Analizi:**
-Yapılan büyük harf standartlaştırması (turkey -> TURKEY) sayesinde, ülke bazlı müşteri sayımları artık tutarlı ve doğru sonuçlar vermektedir.
+Yapılan büyük harf standartlaştırması (turkey → TURKEY) sayesinde, ülke bazlı müşteri sayımları artık tutarlı ve doğru sonuçlar vermektedir.
 ```sql
 SELECT Country, COUNT(*) as sayi
 FROM Customers_Staging
@@ -355,11 +361,15 @@ GROUP BY
 ```
 proje5_images28.jpeg
 
+---
+
 ## 3. Sonuç
 Bu çalışma kapsamında, Northwind veritabanı üzerinde uçtan uca bir **ETL (Extract, Transform, Load)** süreci başarıyla tasarlanmış ve uygulanmıştır.
 
 - **Extract:** Ham veriler güvenli bir staging alanına taşınmıştır.
-- **Transform:** Veri kalitesi sorunları (NULL, duplicate, yazım hataları) giderilmiş ve veriler yeni sütunlar ile zenginleştirilmiştir.
+- **Transform:** Veri kalitesi sorunları (NULL, duplicate, yazım hataları, mantıksız tarihler) giderilmiş; veriler yeni sütunlar ve kategoriler ile zenginleştirilmiştir.
 - **Load:** İşlenmiş veriler analiz edilmeye hazır, temiz bir yapı (`Clean_Orders`) içerisinde nihai tabloya yüklenmiştir.
+
+Temizleme süreci sonucunda elde edilen sayısal bulgular şu şekilde özetlenebilir: `Customers_Staging` tablosunda 1 adet NULL şehir değeri "Unknown" olarak düzeltilmiş, 1 adet mükerrer kayıt silinmiş ve toplam kayıt sayısı 91'e indirgenmiştir. Ülke standartlaştırması kapsamında tüm kayıtlar büyük harf formatına dönüştürülmüştür. `Orders_Staging` tablosunda ise 1 adet gelecek tarihli (2099) hatalı sipariş kaydı güncel tarihle güncellenmiştir.
 
 Sonuç olarak, kirli ve ham veriden yola çıkılarak analiz süreçlerine doğrudan girdi sağlayabilecek yüksek kaliteli bir veri seti elde edilmiştir.
