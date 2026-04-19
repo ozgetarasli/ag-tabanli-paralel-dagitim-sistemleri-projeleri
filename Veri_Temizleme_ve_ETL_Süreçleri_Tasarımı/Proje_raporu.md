@@ -193,41 +193,32 @@ SELECT DISTINCT Country FROM Customers_Staging;
 
 **5. Mantıksız Veri Kontrolü:** Gelecekteki sipariş tarihlerinin düzeltilmesi.
 
-5.0. Hata Simülasyonu: Temizleme mantığını test etmek amacıyla önce mevcut veri kontrol edilmiş, ardından kasıtlı olarak hatalı bir tarih değeri eklenmiştir.
+5.0. Hata Simülasyonu: Temizleme mantığını test etmek amacıyla staging tablosuna kasıtlı olarak hatalı bir tarih değeri eklenmiştir.
 
-İlk kontrol (temizleme öncesi, beklenen sonuç: boş küme):
-```sql
-SELECT *
-FROM Orders_Staging
-WHERE OrderDate > GETDATE();
-```
-![Hatalı Tarih Kontrolü](images/proje5_images14.jpeg)
-
-Hata ekleme:
 ```sql
 UPDATE Orders_Staging
 SET OrderDate = '2099-01-01'
 WHERE OrderID = 10248;
 ```
-![Hata Ekleme Simülasyonu](images/proje5_images15.jpeg)
+proje5_images15.jpeg
 
-Hata sonrası kontrol (hatalı kaydın göründüğü doğrulanır):
+5.1. Mantıksız verileri bulma: Hata eklendikten sonra gelecek tarihli kayıtlar sorgulanarak hatalı kaydın göründüğü doğrulanır.
 ```sql
 SELECT *
 FROM Orders_Staging
 WHERE OrderDate > GETDATE();
 ```
-![Hata Sonrası Durum](images/proje5_images16.jpeg)
+proje5_images16.jpeg
 
-5.1. Mantıksız verileri düzeltme:
+5.2. Mantıksız verileri düzeltme:
 ```sql
 UPDATE Orders_Staging
 SET OrderDate = GETDATE()
 WHERE OrderDate > GETDATE();
 ```
-![Tarih Düzeltme Doğrulama](images/proje5_images17.jpeg)
+proje5_images17.jpeg
 
-5.2. Doğrulama:
+5.3. Doğrulama: Düzeltme sonrasında sorgu boş küme döndürür; bu işlemin başarıyla tamamlandığını gösterir.
 ```sql
 SELECT *
 FROM Orders_Staging
