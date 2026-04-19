@@ -55,7 +55,7 @@ SELECT * INTO Orders_Staging FROM Orders;
 ```
 Yandaki tablolar kısmından `Customers_Staging` ve `Orders_Staging` tablolarını görebiliriz.
 
-proje5_images1.jpeg
+![Staging Tabloları](images/proje5_image1.jpeg)
 
 Aşağıdaki sorguları çalıştırarak da tabloların içeriğini kontrol edebiliriz:
 
@@ -64,7 +64,7 @@ SELECT * FROM Customers_Staging;
 SELECT * FROM Orders_Staging;
 ```
 
-proje5_images2.jpeg
+![Staging İçerik Kontrolü](images/proje5_images2.jpeg)
 
 ### 2.2 Veri Bozulma ve Kalite Testleri
 Veri temizleme mantığını test edebilmek amacıyla, staging tablolarında kasıtlı olarak veri kalitesi hataları oluşturulmuştur (`2_Verileri_Bozma.sql`).
@@ -97,7 +97,7 @@ SELECT * FROM Customers_Staging
 WHERE CustomerID = 'AROUT';
 ```
 
-proje5_images3.jpeg
+![Veri Bozulma Senaryoları](images/proje5_images3.jpeg)
 
 ### 2.3 Veri Temizleme Stratejileri (Transform)
 `3_Veri_temizleme.sql` scripti ile uygulanan temel temizleme adımları şunlardır:
@@ -110,7 +110,7 @@ SELECT *
 FROM Customers_Staging
 WHERE City IS NULL;
 ```
-proje5_images4.jpeg
+![NULL Değer Tespiti](images/proje5_images4.jpeg)
 
 1.2. NULL değerleri düzeltme:
 ```sql
@@ -118,7 +118,7 @@ UPDATE Customers_Staging
 SET City = 'Unknown'
 WHERE City IS NULL;
 ```
-proje5_images5.jpeg
+![NULL Değer Düzeltme](images/proje5_images5.jpeg)
 
 1.3. Doğrulama: Adım 1.1'deki sorgu tekrar çalıştırıldığında NULL değerlerinin kalmadığı görülür. Bu, işlemin başarıyla tamamlandığını gösterir.
 ```sql
@@ -126,7 +126,7 @@ SELECT *
 FROM Customers_Staging
 WHERE City IS NULL;
 ```
-proje5_images6.jpeg
+![NULL Düzeltme Doğrulama](images/proje5_images6.jpeg)
 
 **2. Duplicate Kontrolü:** Mükerrer kayıtların ayıklanarak tekilleştirilmesi.
 
@@ -137,7 +137,7 @@ FROM Customers_Staging
 GROUP BY CustomerID
 HAVING COUNT(*) > 1;
 ```
-proje5_images7.jpeg
+![Mükerrer Kayıt Tespiti](images/proje5_images7.jpeg)
 
 2.2. Mükerrer kayıtları silme:
 ```sql
@@ -148,7 +148,7 @@ WITH CTE AS (
 )
 DELETE FROM CTE WHERE rn > 1;
 ```
-proje5_images8.jpeg
+![Mükerrer Kayıt Silme](images/proje5_images8.jpeg)
 
 2.3. Doğrulama: Silindiğini teyit etmek için ilgili sorgu tekrar çalıştırılır.
 ```sql
@@ -157,7 +157,7 @@ FROM Customers_Staging
 GROUP BY CustomerID
 HAVING COUNT(*) > 1;
 ```
-proje5_images9.jpeg
+![Tekilleştirme Doğrulama](images/proje5_images9.jpeg)
 
 **3. TRIM İşlemi:** İsimlerdeki baş ve son boşlukların temizlenmesi (`LTRIM` ve `RTRIM`).
 
@@ -166,7 +166,7 @@ proje5_images9.jpeg
 UPDATE Customers_Staging
 SET CompanyName = LTRIM(RTRIM(CompanyName));
 ```
-proje5_images10.jpeg
+![Boşluk Temizleme (TRIM)](images/proje5_images10.jpeg)
 
 3.2. Doğrulama: Boş bir sonuç kümesi dönmesi, verilerin temizlendiğini gösterir.
 ```sql
@@ -174,7 +174,7 @@ SELECT CompanyName
 FROM Customers_Staging
 WHERE CompanyName LIKE ' %' OR CompanyName LIKE '% ';
 ```
-proje5_images11.jpeg
+![TRIM Doğrulama](images/proje5_images11.jpeg)
 
 **4. Standartlaştırma:** Ülke isimlerinin standart büyük harf formatına dönüştürülmesi.
 
@@ -183,13 +183,13 @@ proje5_images11.jpeg
 UPDATE Customers_Staging
 SET Country = UPPER(Country);
 ```
-proje5_images12.jpeg
+![Standartlaştırma (UPPER)](images/proje5_images12.jpeg)
 
 4.2. Doğrulama: Tüm kayıtların büyük harf formatında olduğu kontrol edilir.
 ```sql
 SELECT DISTINCT Country FROM Customers_Staging;
 ```
-proje5_images13.jpeg
+![Standartlaştırma Doğrulama](images/proje5_images13.jpeg)
 
 **5. Mantıksız Veri Kontrolü:** Gelecekteki sipariş tarihlerinin düzeltilmesi.
 
@@ -201,7 +201,7 @@ SELECT *
 FROM Orders_Staging
 WHERE OrderDate > GETDATE();
 ```
-proje5_images14.jpeg
+![Hatalı Tarih Kontrolü](images/proje5_images14.jpeg)
 
 Hata ekleme:
 ```sql
@@ -209,7 +209,7 @@ UPDATE Orders_Staging
 SET OrderDate = '2099-01-01'
 WHERE OrderID = 10248;
 ```
-proje5_images15.jpeg
+![Hata Ekleme Simülasyonu](images/proje5_images15.jpeg)
 
 Hata sonrası kontrol (hatalı kaydın göründüğü doğrulanır):
 ```sql
@@ -217,7 +217,7 @@ SELECT *
 FROM Orders_Staging
 WHERE OrderDate > GETDATE();
 ```
-proje5_images16.jpeg
+![Hata Sonrası Durum](images/proje5_images16.jpeg)
 
 5.1. Mantıksız verileri düzeltme:
 ```sql
@@ -225,7 +225,7 @@ UPDATE Orders_Staging
 SET OrderDate = GETDATE()
 WHERE OrderDate > GETDATE();
 ```
-proje5_images17.jpeg
+![Tarih Düzeltme Doğrulama](images/proje5_images17.jpeg)
 
 5.2. Doğrulama:
 ```sql
@@ -246,7 +246,7 @@ UPDATE Orders_Staging SET OrderYear = YEAR(OrderDate);
 ```
 Sorgu sonucunda `OrderDate` sütunundan türetilen `OrderYear` sütunu tabloya eklenmiştir.
 
-proje5_images18.jpeg
+![Yıl Alanı Oluşturma](images/proje5_images18.jpeg)
 
 Kontrol etmek için aşağıdaki sorguyu çalıştırırız. Gelen tabloda yeni oluşturulan sütunları görürüz.
 
@@ -255,7 +255,7 @@ SELECT OrderDate, OrderYear
 FROM Orders_Staging;
 ```
 
-proje5_images19.jpeg
+![Yeni Sütun Kontrolü](images/proje5_images19.jpeg)
 
 **2. Veri Kategorizasyonu (FreightCategory):**
 Sayısal olan kargo ücretleri (`Freight`), 'LOW', 'MEDIUM' ve 'HIGH' olmak üzere kategorize edilerek verinin daha kolay yorumlanması sağlanmıştır. Bu kategorizasyon analitik sorgularda kullanılmak üzere tasarlanmıştır; `Clean_Orders` nihai tablosuna yüklenirken de aynı `CASE` ifadesi uygulanmaktadır.
@@ -268,7 +268,7 @@ SELECT OrderID, Freight,
        END as FreightCategory
 FROM Orders_Staging;
 ```
-proje5_images20.jpeg
+![Kargo Kategorizasyonu](images/proje5_images20.jpeg)
 
 **3. Veri Zenginleştirme (JOIN):**
 Sipariş verileri ile müşteri verileri birleştirilerek, hangi siparişin hangi şirket tarafından verildiği bilgisi tek bir görünümde toplanmıştır.
@@ -278,7 +278,7 @@ FROM Orders_Staging o
 JOIN Customers_Staging c
 ON o.CustomerID = c.CustomerID;
 ```
-proje5_images21.jpeg
+![Veri Zenginleştirme (JOIN)](images/proje5_images21.jpeg)
 
 ### 2.5 Veri Yükleme (Load)
 ETL sürecinin son aşamasında, temizlenen ve dönüştürülen tüm veriler analiz için hazır hale getirilerek nihai tabloya yüklenmiştir (`5_Veri_yükleme.sql`).
@@ -303,17 +303,17 @@ FROM Orders_Staging o
 JOIN Customers_Staging c
 ON o.CustomerID = c.CustomerID;
 ```
-proje5_images22.jpeg
+![Clean_Orders Oluşturma](images/proje5_images22.jpeg)
 
 Yeni tablomuzun oluştuğunu görmek için sol taraftaki tablo listesinden de kontrol edebiliriz.
 
-proje5_images23.jpeg
+![Tablo Listesi Kontrolü](images/proje5_images23.jpeg)
 
 Yükleme işleminin ardından veritabanında oluşan `Clean_Orders` tablosu kontrol edilmiştir:
 ```sql
 SELECT * FROM Clean_Orders;
 ```
-proje5_images24.jpeg
+![Nihai Veri Kontrolü](images/proje5_images24.jpeg)
 
 ### 2.6 Veri Kalitesi Kontrolü ve Raporlama
 ETL süreci tamamlandıktan sonra yapılan veri temizleme ve dönüştürme işlemlerinin başarısını ölçmek amacıyla çeşitli kalite kontrolleri ve raporlama sorguları çalıştırılmıştır (`6_Veri_raporu_kalitesi.sql`).
@@ -323,14 +323,14 @@ Daha önce 'Unknown' olarak güncellenen NULL değerlerin sayısı kontrol edile
 ```sql
 SELECT COUNT(*) as EksikSehir FROM Customers_Staging WHERE City = 'Unknown';
 ```
-proje5_images25.jpeg
+![Düzeltme İstatistikleri](images/proje5_images25.jpeg)
 
 **2. Mükerrer Kayıt Sonrası Tablo Durumu:**
 Temizleme işlemi sonrasında veri setindeki toplam kayıt sayısının 91 olduğu gözlemlenmiştir. Bu durum, duplicate temizleme işleminin başarılı olduğunu ve veri setinin tekilleştirildiğini kanıtlamaktadır.
 ```sql
 SELECT COUNT(*) FROM Customers_Staging;
 ```
-proje5_images26.jpeg
+![Kayıt Sayısı Kontrolü](images/proje5_images26.jpeg)
 
 **3. Ülke Dağılımı ve Standartlaştırma Analizi:**
 Yapılan büyük harf standartlaştırması (turkey → TURKEY) sayesinde, ülke bazlı müşteri sayımları artık tutarlı ve doğru sonuçlar vermektedir.
@@ -339,7 +339,7 @@ SELECT Country, COUNT(*) as sayi
 FROM Customers_Staging
 GROUP BY Country;
 ```
-proje5_images27.jpeg
+![Ülke Bazlı Dağılım](images/proje5_images27.jpeg)
 
 **4. Kargo Ücretleri (Freight) Dağılım Analizi:**
 Dönüştürme aşamasında oluşturulan Freight kategorileri kullanılarak, siparişlerin maliyet dağılımı analiz edilmiştir. Bu sayede düşük, orta ve yüksek maliyetli siparişlerin sayısal oranları belirlenmiştir.
@@ -359,7 +359,7 @@ GROUP BY
         ELSE 'HIGH'
     END;
 ```
-proje5_images28.jpeg
+![Kargo Maliyet Dağılımı](images/proje5_images28.jpeg)
 
 ---
 
