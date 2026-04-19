@@ -15,6 +15,8 @@
    - 2.1 [Staging (Ara Katman) Oluşturma](#21-staging-ara-katman-oluşturma)
    - 2.2 [Veri Bozulma ve Kalite Testleri](#22-veri-bozulma-ve-kalite-testleri)
    - 2.3 [Veri Temizleme Stratejileri (Transform)](#23-veri-temizleme-stratejileri-transform)
+   - 2.4 [Veri Dönüştürme ve Zenginleştirme](#24-veri-dönüştürme-ve-zenginleştirme)
+   - 2.5 [Veri Yükleme (Load)](#25-veri-yükleme-load)
 3. [Sonuç](#3-sonuç)
 
 ---
@@ -229,5 +231,88 @@ FROM Orders_Staging
 WHERE OrderDate > GETDATE();
 ```
 
+## 2.4 Veri Dönüştürme ve Zenginleştirme
+Veriler temizlendikten sonra, analiz süreçlerini kolaylaştırmak ve daha anlamlı hale getirmek için dönüştürme (transfrom) ve zenginleştirme işlemleri uygulanmıştır (`4_Veri_dönüstürme.sql`).
+
+**1. Yeni Alan Oluşturma (OrderYear):**
+Yıl bazlı analizleri hızlandırmak için sipariş tarihlerinden yıl bilgisi çıkarılarak yeni bir sütuna atanmıştır.
+```sql
+ALTER TABLE Orders_Staging ADD OrderYear INT;
+
+UPDATE Orders_Staging SET OrderYear = YEAR(OrderDate);
+```
+Sorgu sonucunda `OrderDate` sütunundan türetilen `OrderYear` sütunu tabloya eklenmiştir.
+
+proje5_images18.jpeg
+
+Kontrol etmek için aşağıdaki sorguyu çalıştırırız.Gelen Tabloda yeni oluşturulan sütunları görürüz.
+
+```sql
+SELECT OrderDate, OrderYear
+FROM Orders_Staging;
+```
+
+proje5_images19.jpeg
+
+**2. Veri Kategorizasyonu (FreightCategory):**
+Sayısal olan kargo ücretleri (`Freight`), 'LOW', 'MEDIUM' ve 'HIGH' olmak üzere kategorize edilerek verinin daha kolay yorumlanması sağlanmıştır.
+```sql
+SELECT OrderID, Freight,
+       CASE 
+           WHEN Freight < 50 THEN 'LOW'
+           WHEN Freight BETWEEN 50 AND 100 THEN 'MEDIUM'
+           ELSE 'HIGH'
+       END as FreightCategory
+FROM Orders_Staging;
+```
+proje5_images20.jpeg
+
+**3. Veri Zenginleştirme (JOIN):**
+Sipariş verileri ile müşteri verileri birleştirilerek, hangi siparişin hangi şirket tarafından verildiği bilgisi tek bir görünümde toplanmıştır.
+```sql
+SELECT o.OrderID, c.CompanyName, o.OrderDate
+FROM Orders_Staging o
+JOIN Customers_Staging c
+ON o.CustomerID = c.CustomerID;
+```
+proje5_images21.jpeg
+
+### 2.5 Veri Yükleme (Load)
+ETL sürecinin son aşamasında, temizlenen ve dönüştürülen tüm veriler analiz için hazır hale getirilerek nihai tabloya yüklenmiştir (`5_Veri_yükleme.sql`).
+
+**Nihai Tablonun Oluşturulması (`Clean_Orders`):**
+Tüm dönüşümler ve join işlemleri uygulanmış veriler `Clean_Orders` adlı yeni bir tabloda kalıcı hale getirilmiştir.
+```sql
+SELECT 
+    o.OrderID,
+    c.CompanyName,
+    c.Country,
+    o.OrderDate,
+    YEAR(o.OrderDate) as OrderYear,
+    o.Freight
+INTO Clean_Orders
+FROM Orders_Staging o
+JOIN Customers_Staging c
+ON o.CustomerID = c.CustomerID;
+
+```
+proje5_images22.jpeg
+
+Yeni tablomuzun oluştuğunu görmek için hem sol taraftaki tablolardan bakabiliriz. 
+
+proje5_images23.jpeg
+
+Yükleme işleminin ardından veritabanında oluşan `Clean_Orders` tablosu kontrol edilmiştir:
+```sql
+SELECT * FROM Clean_Orders;
+```
+proje5_images24.jpeg
+
 ## 3. Sonuç
-Bu aşamaya kadar ETL sürecinin **Extract** ve **Simülasyon (Bozma)** aşamaları ile birlikte **Transform (Temizleme)** işlemleri başarıyla tamamlanmış, ara katman tabloları analiz edilebilir ve tutarlı bir hale getirilmiştir. Hazırlanan rapor, projenin mevcut durumunu ve veri kalitesi iyileştirmelerini belgelemektedir.
+Bu çalışma kapsamında, Northwind veritabanı üzerinde uçtan uca bir **ETL (Extract, Transform, Load)** süreci başarıyla tasarlanmış ve uygulanmıştır.
+
+- **Extract:** Ham veriler güvenli bir staging alanına taşınmıştır.
+- **Transform:** Veri kalitesi sorunları (NULL, duplicate, yazım hataları) giderilmiş ve veriler yeni sütunlar ile zenginleştirilmiştir.
+- **Load:** İşlenmiş veriler analiz edilmeye hazır, temiz bir yapı (`Clean_Orders`) içerisinde nihai tabloya yüklenmiştir.
+
+Sonuç olarak, kirli ve ham veriden yola çıkılarak analiz süreçlerine doğrudan girdi sağlayabilecek yüksek kaliteli bir veri seti elde edilmiştir.
