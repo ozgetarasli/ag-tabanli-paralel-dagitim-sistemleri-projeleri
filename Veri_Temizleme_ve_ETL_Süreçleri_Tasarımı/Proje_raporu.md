@@ -200,7 +200,7 @@ UPDATE Orders_Staging
 SET OrderDate = '2099-01-01'
 WHERE OrderID = 10248;
 ```
-proje5_images15.jpeg
+![Hata Ekleme Simülasyonu](images/proje5_images15.jpeg)
 
 5.1. Mantıksız verileri bulma: Hata eklendikten sonra gelecek tarihli kayıtlar sorgulanarak hatalı kaydın göründüğü doğrulanır.
 ```sql
@@ -208,7 +208,7 @@ SELECT *
 FROM Orders_Staging
 WHERE OrderDate > GETDATE();
 ```
-proje5_images16.jpeg
+![Hata Sonrası Durum](images/proje5_images16.jpeg)
 
 5.2. Mantıksız verileri düzeltme:
 ```sql
@@ -216,7 +216,7 @@ UPDATE Orders_Staging
 SET OrderDate = GETDATE()
 WHERE OrderDate > GETDATE();
 ```
-proje5_images17.jpeg
+![Tarih Düzeltme İşlemi](images/proje5_images17.jpeg)
 
 5.3. Doğrulama: Düzeltme sonrasında sorgu boş küme döndürür; bu işlemin başarıyla tamamlandığını gösterir.
 ```sql
@@ -224,6 +224,7 @@ SELECT *
 FROM Orders_Staging
 WHERE OrderDate > GETDATE();
 ```
+![Düzeltme Doğrulama](images/proje5_images14.jpeg)
 
 ### 2.4 Veri Dönüştürme ve Zenginleştirme
 Veriler temizlendikten sonra, analiz süreçlerini kolaylaştırmak ve daha anlamlı hale getirmek için dönüştürme (transform) ve zenginleştirme işlemleri uygulanmıştır (`4_Veri_dönüstürme.sql`).
