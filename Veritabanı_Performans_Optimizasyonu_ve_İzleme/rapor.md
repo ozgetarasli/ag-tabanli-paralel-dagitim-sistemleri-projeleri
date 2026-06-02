@@ -75,7 +75,7 @@ Bu sorgu;
 
 öğrenmek amacıyla çalıştırılmıştır.
 
-![Sunucu Bilgileri](../görseler/image1.png)
+![Sunucu Bilgileri](görseller/image1.png)
 
 ---
 
@@ -98,7 +98,7 @@ Veritabanındaki tabloların büyüklüklerini görmek için kullanılmıştır.
 
 Büyük tablolarda yapılacak sorgular performansı daha fazla etkileyebileceğinden tablo yoğunluğu analiz edilmiştir.
 
-![Tablo Kayıt Sayıları](../görseler/image2.png)
+![Tablo Kayıt Sayıları](görseller/image2.png)
 
 Yapılan sorgu sonucunda Northwind veritabanındaki en yoğun tablolar sırasıyla Order Details (2155 satır) ve Orders (830 satır) tablolarıdır. Performans optimizasyonu ve indeksleme çalışmalarının veritabanındaki en büyük tablo olan ve sipariş detaylarını tutan Order Details ile ilişkili olduğu Orders tablosu üzerinde yoğunlaştırılması gerektiği sayısal olarak doğrulanmıştır. Boyutu küçük olan (Örn: Shippers - 3 satır, Region - 4 satır) tablolarda indeksleme yapmak yerine, bu yoğun tablolarda yapılacak optimizasyonlar sistem genelinde çok daha yüksek performans artışı sağlayacaktır.
 
@@ -128,7 +128,7 @@ Amaç;
 * Uzun süren işlemleri görmek,
 * Kaynak tüketen sorguları tespit etmektir.
 
-![Aktif Sorgular](../görseler/image3.png)
+![Aktif Sorgular](görseller/image3.png)
 
 sys.dm_exec_requests ve sys.dm_exec_sql_text DMV'leri kullanılarak veritabanında anlık yürütülen işlemler sorgulanmıştır. Test ortamında anlık olarak yüksek yoğunluklu kullanıcı yükü veya arka planda çalışan ağır transaction süreçleri bulunmadığı için, listede sadece analiz amacıyla çalıştırılan aktif session_id = 102 numaralı izleme sorgusunun kendisi running durumunda görüntülenmiştir. Bu durum sistemin o an için herhangi bir sorgu tıkanması (blocking) veya aşırı kaynak tüketimi (bottleneck) altında olmadığını göstermektedir.
 ---
@@ -178,7 +178,7 @@ Bu sorgu SQL Server belleğinde tutulan sorgular arasından CPU tüketimi yükse
 
 Yüksek CPU kullanımı performans problemlerinin önemli göstergelerinden biridir.
 
-![CPU Tüketen Sorgular](../görseler/image4.png)
+![CPU Tüketen Sorgular](görseller/image4.png)
 
 En yüksek CPU maliyetinin 4 tabloyu birleştiren Ağır JOIN Simülasyonu sorgusuna ait olduğu görülmüştür. Bu durum, çoklu JOIN işlemlerinin CPU üzerindeki yükünü kanıtlamaktadır. Optimizasyon çalışmalarımızın odak noktası bu birleştirme (JOIN) maliyetlerini düşürmek olacaktır.
 
@@ -205,7 +205,7 @@ Bu sorgu ile diskte en fazla okuma/yazma işlemi yapan sorgular tespit edilmişt
 Yüksek mantıksal okuma (Logical Reads) değerleri, sorgunun çok fazla veri sayfası taradığını ve indeks eksikliği olabileceğini göstermektedir.
 
 
-![En Çok I/O Yapan Sorgular](../görseler/image5.png)
+![En Çok I/O Yapan Sorgular](görseller/image5.png)
 
 En fazla disk okuması (142 logical reads) yapan sorguların sistem katalog sorguları olduğu görülmüştür. Veritabanının I/O yükünü düşürmek ve disk okumalarını azaltmak amacıyla, sonraki adımlarda yapacağımız JOIN bazlı sorgu optimizasyonları ve doğru indeks tasarımları kritik önem taşımaktadır.
 
@@ -233,7 +233,7 @@ Bekleme istatistikleri;
 
 hakkında bilgi vermektedir.
 
-![Bekleme İstatistikleri](../görseler/image6.png)
+![Bekleme İstatistikleri](görseller/image6.png)
 
 Sunucuda en yüksek bekleme süresinin arka plan görev dağıtımları ve sistem içi beklemelerden kaynaklandığı görülmüştür. Kaynak beklemelerini azaltmak ve işlemciyi (CPU) rahatlatmak için sonraki bölümlerde yapacağımız indeks optimizasyonları ve yavaş çalışan JOIN sorgularının iyileştirilmesi kritik önem taşımaktadır.
 ---
@@ -244,14 +244,14 @@ SQL Server Profiler, sorguların gerçek zamanlı olarak izlenmesini sağlayan g
 ### 3.7.1 Profiler'ı Başlatma
 SSMS üzerinden Tools → SQL Server Profiler menüsüne tıklanmıştır.
 Açılan pencerede SQL Server'a bağlantı sağlanmıştır.
-![SQL Server Profiler](../görseler/image7.png)
+![SQL Server Profiler](görseller/image7.png)
 
 ### 3.7.2 Trace Yapılandırması
 Yeni oluşturulan trace işleminde şu ayarlar kullanılmıştır:
 * **Trace Name (İzleme Adı):** `Northwind_Performans_Izleme`
 * **Template (Şablon):** `Standard (default)` (Sistem izinlerine uygun olarak varsayılan şablon seçilmiştir)
 * **Column Filters (Sütun Filtresi):** `DatabaseName` → `Like` → `Northwind` (Sadece Northwind veritabanına gelen sorguların izlenmesi ve kalabalık sistem sorgularının elenmesi sağlanmıştır)
-![SQL Server Profiler](../görseler/image8.png)
+![SQL Server Profiler](görseller/image8.png)
 
 ### 3.7.3 Trace Çalıştırma ve Sorgu Yakalama
 Profiler çalışır durumdayken SSMS'e dönülerek aşağıdaki test sorguları çalıştırılmıştır:
@@ -280,7 +280,7 @@ ORDER BY TotalAmount DESC;
 
 Profiler'a geri dönüldüğünde bu sorguların yakalandığı görülmüştür. Her sorgu için Duration, CPU, Reads ve Writes sütunları incelenmiştir.
 
-![SQL Server Profiler](../görseler/image9.png)
+![SQL Server Profiler](görseller/image9.png)
 
 SQL Server Profiler kullanılarak sorgu yürütme süreçleri gerçek zamanlı izlenmiştir. Test sorgularımızın yürütülmesi sırasında milisaniye bazında süreler (Duration) yakalanmış, sistem katalog sorgularına kıyasla bizim çalıştırdığımız çoklu tablolara yönelik veri çekme işlemlerinin önbellekte daha fazla iz bıraktığı görülmüştür. Bu durum, bir sonraki aşamalarda uygulayacağımız indeks optimizasyonlarının ve Execution Plan iyileştirmelerinin sorgu çalışma sürelerini düşürmedeki gerekliliğini göstermektedir.
 
@@ -306,7 +306,7 @@ Veritabanında bulunan mevcut indeksler analiz edilmiştir.
 
 İndeksler sorgu performansını artıran temel yapılardır.
 
-![İndeks listesi](../görseler/image10.png)
+![İndeks listesi](görseller/image10.png)
 
 Northwind veritabanındaki tüm tabloların indeks yapıları listelenmiştir. Dikkat çeken en önemli bulgu; Orders tablosunda CustomerID ile CustomersOrders, ayrıca EmployeeID ile EmployeesOrders indekslerinin birebir aynı kolonları kapsayarak tekrarlanmasıdır (duplicate indexes). Bu durum, yazma işlemlerinde (INSERT/UPDATE) sisteme ek yük getirmektedir. Sonraki adımlarda bu gereksiz indeksleri temizleyip, JOIN sorgularını hızlandırmak için özelleştirilmiş Composite İndeks tasarımları uygulayacağız.
 ---
@@ -332,7 +332,7 @@ Bu sorgu ile indekslerin ne kadar kullanıldığı incelenmiştir.
 
 İndeks kullanım istatistikleri incelendiğinde, siparişlerin birleştirilmesinde kullanılan Order Details.ProductID indeksinin 3 User Seeks ile en aktif aranan indeks olduğu görülmüştür. Buna karşın, sistemde NULL veya sıfır olarak listelenen birçok indeks bulunmaktadır. Bu durum, veri yazma yükünü hafifletmek adına kullanılmayan indekslerin temizlenmesi ve sonraki adımlarda sorgu odaklı doğrudan Index Seek tetikleyecek composite indekslerin oluşturulması gerektiğini doğrulamaktadır.
 
-![İndeks kullanım istatistikleri](../görseler/image11.png)
+![İndeks kullanım istatistikleri](görseller/image11.png)
 
 ---
 
@@ -387,7 +387,7 @@ ON Customers(Country);
 
 Country sütunu üzerinde filtreleme yapan sorguların hızlandırılması amacıyla indeks oluşturulmuştur.
 
-![İndeks Oluşturma](../görseler/image12.png)
+![İndeks Oluşturma](görseller/image12.png)
 
 ---
 
@@ -437,7 +437,7 @@ GO
 
 
 
-![İndeks silme sonrası güncel liste](../görseler/image13.png)
+![İndeks silme sonrası güncel liste](görseller/image13.png)
 
 ---
 
@@ -467,7 +467,7 @@ AND ips.index_id=i.index_id;
 
 Yüksek fragmentasyon sorgu performansını olumsuz etkileyebilir.
 
-![Fragmentasyon sonuçları](../görseler/image14.png)
+![Fragmentasyon sonuçları](görseller/image14.png)
 
  İndeks fragmentasyon analizinde, Orders tablosuna ait birçok indeksin (Örn: ShipPostalCode %75, CustomerID %66) ve Order Details.ProductID indeksinin (%50) yüksek oranda parçalandığı ve sistem tarafından REBUILD önerildiği görülmüştür. Bu yüksek parçalanma, disk okuma maliyetlerini artırarak sorguları yavaşlatmaktadır. Bir sonraki adımda bu performans darboğazını gidermek üzere REORGANIZE ve REBUILD indeks bakım işlemleri uygulanacaktır.
 ---
@@ -497,7 +497,7 @@ REBUILD: İndeksi tamamen yeniden oluşturur. Yüksek fragmentasyon durumlarınd
 UPDATE STATISTICS: SQL Server'ın sorgu planları oluştururken kullandığı istatistikleri günceller.
 Bakım işlemi sonrası fragmentasyon sorgusu tekrar çalıştırılarak iyileşme doğrulanmıştır.
 
-![Ekran Görüntüsü: Bakım işlemi sonuçları](../görseler/image15.png)
+![Ekran Görüntüsü: Bakım işlemi sonuçları](görseller/image15.png)
 
 # 5. Sorgu Optimizasyonu ve Execution Plan
 
@@ -514,7 +514,7 @@ STATISTICS IO: Sorgunun kaç veri sayfası okuduğunu (Logical Reads, Physical R
 STATISTICS TIME: Sorgunun CPU süresi ve toplam çalışma süresini gösterir.
 Bu komutlar sorgu çalıştırıldıktan sonra Messages sekmesinde istatistik bilgilerini görüntülemektedir.
 
-![Ekran Görüntüsü: SET STATISTICS IO ve TIME](../görseler/image16.png)
+![Ekran Görüntüsü: SET STATISTICS IO ve TIME](görseller/image16.png)
 
 ## 5.2 Başlangıç Sorgusu
 
@@ -533,9 +533,9 @@ WHERE c.Country='Germany';
 
 Bu sorgu performans testi amacıyla seçilmiştir.
 
-![Sorgu sonucu](../görseler/image17.png)
+![Sorgu sonucu](görseller/image17.png)
 
-![iletiler sonucu](../görseler/image18.png)
+![iletiler sonucu](görseller/image18.png)
 
  Almanya'daki müşterilerin siparişlerini listeleyen optimize edilmemiş başlangıç sorgusu başarıyla çalıştırılmış ve 122 satır veri dönmüştür. Bu sorgunun arka planda ne kadar kaynak tükettiğini ve disk okuması yaptığını tespit etmek için bir sonraki adımda İletiler (Messages) sekmesindeki IO/TIME istatistikleri ile Execution Plan detayları incelenecektir.
 ---
@@ -565,7 +565,7 @@ Kümelenmiş Dizin Tarama (Clustered Index Scan - %10): Customers tablosundaki P
 Kümelenmiş Dizin Tarama (Clustered Index Scan - %39): Orders tablosunda sipariş verilerini eşleştirmek için yine tam tarama (PK_Orders) yapılmıştır.
 Karma Eşleşmesi (Hash Match - %51): SQL Server, her iki tablodan gelen verileri bellekte birleştirmek (JOIN) için en maliyetli birleştirme yöntemi olan Hash Match operasyonunu kullanmıştır. Bu adım sorgu planının en yavaş ve en maliyetli bölümünü oluşturmaktadır.
 
-![Ekran Görüntüsü: İndeks Öncesi Yürütme Planı](../görseler/image19.png)
+![Ekran Görüntüsü: İndeks Öncesi Yürütme Planı](görseller/image19.png)
 
 ---
 
@@ -587,7 +587,7 @@ JOIN Customers c
 ON o.CustomerID = c.CustomerID
 WHERE c.Country = 'Germany';
 GO
-![Ekran Görüntüsü: İndeks Sonrası Yürütme Planı](../görseler/image20.png)
+![Ekran Görüntüsü: İndeks Sonrası Yürütme Planı](görseller/image20.png)
 
 İndeks öncesinde Customers tablosu tam tarama ile %10 maliyet üretirken, şimdi indeksimiz sayesinde doğrudan nokta atışı aramayla maliyet %7'ye inmiştir.
 
@@ -623,76 +623,284 @@ Aynı sonucu üreten farklı sorguların performans farklarını gözlemlemektir
 
 ---
 
-# 6. Veri Yöneticisi Rolleri ve Erişim Yönetimi
+# 6. Disk Alanı ve Veri Yoğunluğu Yönetimi
 
-## 6.1 Kullanıcı Oluşturma
+## 6.1 Veritabanı Genel Boyut Bilgisi
 
 ```sql
-CREATE LOGIN ReadOnlyUser
-WITH PASSWORD='ReadOnly123!';
+USE Northwind;
+EXEC sp_spaceused;
+```
+### Açıklama
+sp_spaceused sistem prosedürü ile veritabanının toplam boyutu, kullanılan alan ve boş alan bilgileri görüntülenmiştir.
+
+![ Veritabanı boyut bilgisi](görseller/image21.png)
+
+Northwind veritabanının toplam boyutu 144.00 MB olup, diskte ayrılmış ancak henüz kullanılmayan alan (unallocated space) 61.93 MB olarak tespit edilmiştir. Gerçek verilerin tutulduğu alan 2648 KB iken, indekslerin kapladığı alan 2376 KB'tır. İndeks boyutunun veri boyutuna yakın olması, veritabanının sorgu odaklı indekslendiğini gösterir. Sonraki adımlarda tabloların tekil boyutları incelenerek gereksiz alan yönetimi gerçekleştirilecektir.
+
+## 6.2 Veritabanı Dosya Bilgileri
+
+```sql
+SELECT
+    name AS FileName,
+    type_desc AS FileType,
+    physical_name AS PhysicalPath,
+    size * 8 / 1024 AS SizeMB,
+    growth AS GrowthSetting,
+    is_percent_growth AS IsPercentGrowth
+FROM sys.database_files;
+```
+### Açıklama
+Veritabanının fiziksel dosyaları (veri dosyası ve log dosyası) incelenmiştir. Dosya boyutları ve otomatik büyüme ayarları kontrol edilmiştir.
+
+
+
+![ Veritabanı boyut bilgisi](görseller/image22.png)
+
+Northwind veritabanına ait ana veri dosyasının (ROWS türünde) 72 MB ve işlem günlüklerinin tutulduğu log dosyasının (LOG türünde) 72 MB olduğu tespit edilmiştir. Her iki dosya da C:\Program Files\Microsoft SQL Server dizini altında fiziksel olarak depolanmaktadır. Log dosyasının veri dosyası boyutuna eşit olması, arka planda yapılan indeks oluşturma ve veri yükleme gibi işlemlerin log yükü oluşturduğunu göstermektedir. Sonraki adımlarda disk alanını geri kazanmak amacıyla Shrink (Sıkıştırma) işlemleri analiz edilecektir.
+
+## 6.3 Tablo Bazında Disk Kullanımı
+
+```sql
+SELECT
+    t.NAME AS TableName,
+    p.rows AS [Kayıt Sayısı],
+    SUM(a.total_pages) * 8 AS TotalSpaceKB,
+    SUM(a.used_pages) * 8 AS UsedSpaceKB,
+    (SUM(a.total_pages) - SUM(a.used_pages)) * 8 AS UnusedSpaceKB
+FROM sys.tables t
+INNER JOIN sys.indexes i ON t.OBJECT_ID = i.object_id
+INNER JOIN sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
+INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
+GROUP BY t.Name, p.Rows
+ORDER BY SUM(a.total_pages) DESC;
+
 ```
 
 ### Açıklama
+Her tablonun disk üzerinde ne kadar alan kapladığı analiz edilmiştir.
 
-Sisteme yeni bir kullanıcı eklenmiştir.
+Bu bilgi;
 
-📸 Ekran Görüntüsü: Login oluşturma
+En büyük tabloların tespiti,
+Kullanılmayan alanların belirlenmesi,
+Kapasite planlaması
+açısından önemlidir.
 
----
+![ Tablo bazında disk kullanımı](görseller/image23.png)
 
-## 6.2 Rol Oluşturma
+Disk üzerinde en çok alan kaplayan tablolar sırasıyla Orders (1528 KB) ve Order Details (1000 KB) olarak tespit edilmiştir. Orders tablosundaki kullanılmayan boş alanın (UnusedSpaceKB) 1144 KB gibi yüksek bir oranda olması dikkat çekicidir. Bu boş alanlar veritabanında gerçekleştirilen silme işlemlerinden veya indeks değişimlerinden kaynaklanmaktadır. Bu atıl alanın işletim sistemine geri kazandırılması için bir sonraki adımda Shrink (Sıkıştırma) işlemi gerçekleştirilecektir.
 
-```sql
-CREATE ROLE ReportingRole;
-```
-
-### Açıklama
-
-Raporlama işlemleri için özel bir rol tanımlanmıştır.
-
-📸 Ekran Görüntüsü: Rol oluşturma
-
----
-
-## 6.3 Yetki Verme
+## 6.4 Veritabanı Sıkıştırma (Shrink)
 
 ```sql
-GRANT SELECT ON Orders TO ReportingRole;
-GRANT SELECT ON Customers TO ReportingRole;
+-- Kullanılmayan alanı serbest bırakma
+DBCC SHRINKDATABASE (Northwind, 10);
+PRINT 'Veritabani sikistirma tamamlandi.';
 ```
-
 ### Açıklama
+DBCC SHRINKDATABASE komutu ile veritabanındaki kullanılmayan alanlar serbest bırakılmıştır. Parametre olarak verilen 10 değeri, sıkıştırma sonrası en az %10 boş alan bırakılacağını belirtmektedir.
 
-Kullanıcının sadece veri okumasına izin verilmiştir.
 
-Bu yaklaşım en az yetki (Least Privilege) prensibine uygundur.
 
-📸 Ekran Görüntüsü: Yetkilendirme
+![Shrink işlemi sonucu](görseller/image24.png)
+
+DBCC SHRINKDATABASE komutu başarıyla çalıştırılarak Northwind veritabanındaki kullanılmayan atıl disk alanları işletim sistemine geri kazandırılmıştır. Veritabanı dosyalarının boyutları minimum düzeylere çekilmiştir. Disk alanı yönetimi tamamlandığına göre, projenin son ana başlığı olan 7. Veri Yöneticisi Rolleri ve Erişim Yönetimi bölümünde veritabanı güvenliği ve yetkilendirme yapılandırması gerçekleştirilecektir.
+
+
+# 7. Veri Yöneticisi Rolleri ve Erişim Yönetimi
+
+## 7.1 Kullanıcı Oluşturma
+
+Farklı yetki seviyelerine sahip dört ayrı kullanıcı oluşturulmuştur.
+
+```sql
+
+-- Login'lerin oluşturulması (sunucu düzeyinde)
+CREATE LOGIN DBA_Admin WITH PASSWORD = 'DbaGuclu$123!';
+CREATE LOGIN VeriAnalisti WITH PASSWORD = 'Analiz$456!';
+CREATE LOGIN AppUser WITH PASSWORD = 'Uygulama$789!';
+CREATE LOGIN ReadOnlyUser WITH PASSWORD = 'ReadOnly$012!';
+PRINT 'Login''ler olusturuldu.';
+sql
+
+-- Veritabanı kullanıcılarının oluşturulması
+USE Northwind;
+CREATE USER DBA_Admin FOR LOGIN DBA_Admin;
+CREATE USER VeriAnalisti FOR LOGIN VeriAnalisti;
+CREATE USER AppUser FOR LOGIN AppUser;
+CREATE USER ReadOnlyUser FOR LOGIN ReadOnlyUser;
+PRINT 'Veritabani kullanicilari olusturuldu.';
+```
+### Açıklama
+Dört farklı kullanıcı profili tanımlanmıştır:
+
+* DBA_Admin: Tam yetkili yönetici
+* VeriAnalisti: Raporlama ve analiz yetkili kullanıcı
+* AppUser: Uygulama verileri için standart kullanıcı
+* ReadOnlyUser: Sadece okuma yetkili kullanıcı
+
+
+![Kullanıcı Oluşturma Sonucu](görseller/image25.png)
+
+## 7.2 Rol Oluşturma
+
+```sql
+CREATE ROLE db_VeriAnalisti;
+CREATE ROLE db_UygulamaKullanicisi;
+CREATE ROLE db_RaporKullanicisi;
+PRINT 'Roller olusturuldu.';
+```
+### Açıklama
+Farklı iş gereksinimleri için üç özel rol tanımlanmıştır. Her rol, belirli yetkileri gruplamak amacıyla kullanılmaktadır.
+
+![Rol Oluşturma Sonucu](görseller/image26.png)
+
+
+## 7.3 Yetki Verme ve Kısıtlama
+
+```sql
+-- DBA_Admin: Tam yetki (db_owner rolüne ekleme)
+ALTER ROLE db_owner ADD MEMBER DBA_Admin;
+-- Veri Analisti: SELECT ve EXECUTE yetkisi
+GRANT SELECT ON SCHEMA::dbo TO db_VeriAnalisti;
+GRANT EXECUTE ON SCHEMA::dbo TO db_VeriAnalisti;
+-- Uygulama Kullanıcısı: CRUD yetkileri
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::dbo TO db_UygulamaKullanicisi;
+-- Rapor Kullanıcısı: Sadece belirli tablolarda SELECT
+GRANT SELECT ON dbo.Customers TO db_RaporKullanicisi;
+GRANT SELECT ON dbo.Orders TO db_RaporKullanicisi;
+GRANT SELECT ON dbo.[Order Details] TO db_RaporKullanicisi;
+GRANT SELECT ON dbo.Products TO db_RaporKullanicisi;
+-- Hassas verilere erişimi engelleme (DENY)
+DENY SELECT ON dbo.Employees TO db_RaporKullanicisi;
+PRINT 'Yetkiler atandi.';
+```
+### Açıklama
+GRANT: Belirtilen yetkiyi vermektedir.
+DENY: Belirtilen yetkiyi açıkça engellemektedir. DENY, GRANT'tan önceliklidir.
+db_owner: Veritabanı üzerinde tam yetki sağlayan yerleşik roldür.
+Rapor kullanıcısının Employees tablosuna erişimi DENY ile engellenmiştir. Bu sayede hassas personel bilgileri korunmuştur.
+
+![Yetkilendirme işlemleri Sonucu](görseller/image27.png)
+
+db_owner, db_VeriAnalisti, db_UygulamaKullanicisi ve db_RaporKullanicisi rolleri için yetki matrisi başarıyla uygulanmış ve kullanıcılar ilgili rollere atanmıştır. Özellikle raporlama rolü için Employees tablosuna uygulanan DENY SELECT kısıtlamasıyla hassas verilerin güvenliği sağlanmıştır. Bir sonraki adımda sistem katalog tabloları üzerinden yetki kontrolü ve doğrulama işlemleri gerçekleştirilecektir.
+
+
+## 7.5 Yetki Kontrolü
+
+```sql
+-- Kullanıcıların sahip olduğu yetkileri listeleme
+SELECT
+    dp.name AS UserOrRole,
+    dp.type_desc AS PrincipalType,
+    o.name AS ObjectName,
+    p.permission_name AS Permission,
+    p.state_desc AS PermissionState
+FROM sys.database_permissions p
+INNER JOIN sys.database_principals dp
+    ON p.grantee_principal_id = dp.principal_id
+LEFT JOIN sys.objects o
+    ON p.major_id = o.object_id
+WHERE dp.name IN ('DBA_Admin', 'VeriAnalisti', 'AppUser', 'ReadOnlyUser',
+                   'db_VeriAnalisti', 'db_UygulamaKullanicisi', 'db_RaporKullanicisi')
+ORDER BY dp.name, o.name;
+```
+```sql
+-- Rol üyeliklerini kontrol etme
+SELECT
+    dp_member.name AS UserName,
+    dp_role.name AS RoleName
+FROM sys.database_role_members drm
+INNER JOIN sys.database_principals dp_member
+    ON drm.member_principal_id = dp_member.principal_id
+INNER JOIN sys.database_principals dp_role
+    ON drm.role_principal_id = dp_role.principal_id
+WHERE dp_member.name IN ('DBA_Admin', 'VeriAnalisti', 'AppUser', 'ReadOnlyUser')
+ORDER BY dp_member.name;
+```
+### Açıklama
+Atanan yetkilerin doğru çalıştığını kontrol etmek amacıyla iki doğrulama sorgusu kullanılmıştır:
+
+İlk sorgu, her kullanıcı ve rol için atanmış tüm yetkileri (GRANT/DENY) listelemektedir.
+İkinci sorgu, kullanıcıların hangi rollere üye olduğunu göstermektedir.
+
+![Yetki Kontrolü Sonucu](görseller/image28.png)
+
+sistem katalog sorgusu ile yetkilerin doğruluğu kanıtlanmıştır. db_RaporKullanicisi rolünün Customers, Orders, Order Details ve Products tablolarında SELECT yetkisi GRANT durumundayken, Employees tablosunda DENY (Yasak) durumunda olduğu doğrulanmıştır. Bir sonraki adımda, bu yetki sınırlarının uygulamadaki davranışını simüle etmek amacıyla Erişim Testleri (EXECUTE AS) gerçekleştirilecektir.
+
+## 7.6 Erişim Testi (EXECUTE AS)
+
+Yetkilerin pratikte doğru çalışıp çalışmadığını test etmek amacıyla EXECUTE AS komutu kullanılmıştır.
+
+```sql
+-- ReadOnlyUser olarak bağlan
+EXECUTE AS USER = 'ReadOnlyUser';
+PRINT 'Gecerli kullanici: ' + USER_NAME();
+-- TEST 1: Customers tablosundan okuma (İzin verilmiş)
+SELECT TOP 5 * FROM Customers;
+PRINT 'Customers tablosu okuma: BASARILI';
+-- TEST 2: Customers tablosuna yazma (İzin verilmemiş)
+BEGIN TRY
+    INSERT INTO Customers (CustomerID, CompanyName)
+    VALUES ('TEST1', 'Test Sirket');
+    PRINT 'INSERT islemi: BASARILI';
+END TRY
+BEGIN CATCH
+    PRINT 'INSERT islemi: ENGELLENDI - ' + ERROR_MESSAGE();
+END CATCH
+-- TEST 3: Employees tablosundan okuma (DENY ile engellenmiş)
+BEGIN TRY
+    SELECT TOP 1 * FROM Employees;
+    PRINT 'Employees okuma: BASARILI';
+END TRY
+BEGIN CATCH
+    PRINT 'Employees okuma: ENGELLENDI - ' + ERROR_MESSAGE();
+END CATCH
+-- Orijinal kullanıcıya geri dön
+REVERT;
+PRINT 'Orijinal kullaniciya geri donuldu.';
+```
+### Açıklama
+EXECUTE AS komutu ile ReadOnlyUser kullanıcısı simüle edilmiştir. Test sonuçları:
+
+| Test | Beklenen Sonuç | Gerçek Sonuç |
+|------|----------------|--------------|
+| Customers tablosundan SELECT | ✅ Başarılı | Başarılı |
+| Customers tablosuna INSERT | ❌ Engellenmeli | Engellendi |
+| Employees tablosundan SELECT | ❌ Engellenmeli | Engellendi |
+
+![Erişim Testi 1](görseller/image29.png)
+![Erişim Testi 2](görseller/image30.png)
+
+
+EXECUTE AS komutu ile ReadOnlyUser kimliği simüle edilerek yetkiler test edilmiştir. Rapor kullanıcısının Customers tablosundan okuma yapabildiği, ancak bu tabloya yeni veri yazma (INSERT) ve kısıtlanan Employees tablosunu okuma (SELECT) girişimlerinin SQL Server tarafından "Permission Denied" hatası ile başarıyla engellendiği doğrulanmıştır. Yetkilendirme modelinin hedeflendiği gibi çalıştığı kanıtlanmıştır.
+
+
+
+# 8. Sonuç ve Değerlendirme
+
+Bu çalışmada, Northwind veritabanı üzerinde performans analizleri yapılmış, tespit edilen darboğazlar optimize edilmiş ve güvenli bir erişim altyapısı kurulmuştur. 
+
+### 8.1 Yapılan Çalışmaların Özeti
+
+* **Performans İzleme:** DMV sorguları ve SQL Server Profiler kullanılarak en çok CPU ve disk okuması (I/O) yapan sorgular başarıyla tespit edilmiştir.
+* **İndeks Yönetimi:** İndekslerdeki parçalanma (fragmentasyon) oranları ölçülmüş ve REBUILD/REORGANIZE işlemleriyle indeksler temizlenmiştir. Orders tablosundaki gereksiz mükerrer indeksler silinerek yazma performansı artırılmıştır.
+* **Sorgu Optimizasyonu:** Customers tablosuna uygulanan `Covering Index` (Kapsayıcı İndeks) sayesinde, yavaş çalışan tam tarama (Scan) işlemi, nokta atışı aramaya (**Index Seek**) dönüştürülmüştür. Bu sayede disk okuma yükü **%66.6** oranında azaltılmıştır.
+* **Depolama Yönetimi:** Veritabanının dosya ve tablo boyutları analiz edilmiş, kullanılmayan atıl alanlar sıkıştırılarak (Shrink) disk alanı optimize edilmiştir.
+* **Yetki Yönetimi:** 4 kullanıcı ve 3 özel rol tanımlanarak yetkilendirme yapılmıştır. Rapor kullanıcısının hassas verilere (Employees tablosu) erişimi `DENY` ile engellenmiş ve bu durum `EXECUTE AS` testi ile başarıyla doğrulanmıştır.
 
 ---
 
-## 6.4 Yetki Kontrolü
+### 8.2 Özet Tablo
 
-(SQL sorgusu)
-
-### Açıklama
-
-Verilen yetkilerin doğru atanıp atanmadığı doğrulanmıştır.
-
-📸 Ekran Görüntüsü: Yetki sonuçları
+| Çalışma Alanı | Yapılan İşlem | Sağlanan Performans / Güvenlik Çıktısı |
+| :--- | :--- | :--- |
+| **Veritabanı İzleme** | DMV ve Profiler analizi | Darboğaz oluşturan sorgular belirlendi. |
+| **İndeks Yönetimi** | Gereksiz indeks silme ve fragmentasyon bakımı | Disk okuma hızı ve yazma performansı artırıldı. |
+| **Sorgu Optimizasyonu** | Kapsayıcı İndeks Tasarımı | Customers tablosunda **%66.6 disk okuma tasarrufu** sağlandı. |
+| **Depolama Yönetimi** | Boyut analizi ve Sıkıştırma (Shrink) | Depolama alanındaki atıl boşluklar temizlendi. |
+| **Erişim Yönetimi** | Rol atama, DENY kısıtlaması ve testler | Hassas verilere yetkisiz erişimler başarıyla engellendi. |
 
 ---
 
-# 7. Sonuç ve Değerlendirme
-
-Bu çalışmada Northwind veritabanı üzerinde performans analizi gerçekleştirilmiştir.
-
-Yapılan incelemeler sonucunda;
-
-* DMV kullanılarak kaynak tüketen sorgular tespit edilmiştir.
-* İndeks kullanımı analiz edilmiştir.
-* Yeni indeksler oluşturularak sorgu performansı artırılmıştır.
-* Execution Plan yardımıyla sorguların çalışma mantığı incelenmiştir.
-* Kullanıcı ve rol bazlı erişim yönetimi uygulanmıştır.
-
-Bu çalışmalar sonucunda veritabanı performansının izlenmesi, optimize edilmesi ve güvenli şekilde yönetilmesi konusunda uygulamalı deneyim kazanılmıştır.
